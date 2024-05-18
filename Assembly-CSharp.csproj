@@ -64,7 +64,22 @@
     <Analyzer Include="C:\Program Files\Unity\Hub\Editor\2022.3.20f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.Properties.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\Scripts\Physics\GasSim.cs" />
+    <Compile Include="Assets\Scripts\Compute Helpers\ComputeHelper.cs" />
+    <Compile Include="Assets\Scripts\Display\ParticleDisplay3D.cs" />
+    <Compile Include="Assets\Scripts\Simulation3D.cs" />
+    <Compile Include="Assets\Scripts\Compute Helpers\GPU sort\GPUSort.cs" />
+    <Compile Include="Assets\Scripts\Spawner3D.cs" />
+    <Compile Include="Assets\Scripts\Display\SphereGenerator.cs" />
+    <Compile Include="Assets\Scripts\Physics\SPH.cs" />
+    <Compile Include="Assets\Scripts\Physics\Kernals.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Assets\Scripts\Physics\FluidSim3D.compute" />
+    <None Include="Assets\Scripts\Physics\SpatialHash3D.hlsl" />
+    <None Include="Assets\Scripts\Display\Particle3D.shader" />
+    <None Include="Assets\Scripts\Physics\FluidMaths3D.hlsl" />
+    <None Include="Assets\Scripts\Compute Helpers\GPU sort\Resources\BitonicMergeSort.compute" />
+    <None Include="Assets\Scripts\Display\Particle3DSurf.shader" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">
@@ -947,6 +962,10 @@
       <HintPath>Library\ScriptAssemblies\Unity.VisualScripting.Shared.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Unity.Mathematics">
+      <HintPath>Library\ScriptAssemblies\Unity.Mathematics.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Unity.VisualStudio.Editor">
       <HintPath>Library\ScriptAssemblies\Unity.VisualStudio.Editor.dll</HintPath>
       <Private>False</Private>
@@ -989,6 +1008,10 @@
     </Reference>
     <Reference Include="Unity.VisualScripting.Flow.Editor">
       <HintPath>Library\ScriptAssemblies\Unity.VisualScripting.Flow.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Mathematics.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.Mathematics.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
