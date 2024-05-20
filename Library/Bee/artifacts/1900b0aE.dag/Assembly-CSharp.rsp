@@ -359,6 +359,7 @@
 "Assets/Scripts/Compute Helpers/GPU sort/GPUSort.cs"
 "Assets/Scripts/Display/ParticleDisplay3D.cs"
 "Assets/Scripts/Display/SphereGenerator.cs"
+"Assets/Scripts/Display/SphereGeneratorEightFaces.cs"
 "Assets/Scripts/Physics/Kernals.cs"
 "Assets/Scripts/Physics/SPH.cs"
 "Assets/Scripts/Simulation3D.cs"

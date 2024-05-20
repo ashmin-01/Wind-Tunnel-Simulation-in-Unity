@@ -27,7 +27,7 @@ public class ParticleDisplay3D : MonoBehaviour
         mat.SetBuffer("Positions", sim.PositionBuffer);
         mat.SetBuffer("Velocities", sim.VelocityBuffer);
 
-        mesh = SebStuff.SphereGenerator.GenerateSphereMesh(meshResolution);
+        mesh = SphereGeneratorEightFaces.GenerateSphereMesh(meshResolution);
         debug_MeshTriCount = mesh.triangles.Length / 3;
         argsBuffer = ComputeHelper.CreateArgsBuffer(mesh, sim.PositionBuffer.count);
         bounds = new Bounds(Vector3.zero, Vector3.one * 10000);

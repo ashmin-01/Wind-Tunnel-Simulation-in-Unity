@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 705507994}
-  m_IndirectSpecularColor: {r: 0.4492334, g: 0.49930477, b: 0.5757145, a: 1}
+  m_IndirectSpecularColor: {r: 0.44923335, g: 0.49930453, b: 0.57571465, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -385,8 +385,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.08348792, y: -0.7000429, z: -0.08297947, w: 0.70433235}
-  m_LocalPosition: {x: 20.19, y: -1.6, z: 0.7}
+  m_LocalRotation: {x: -0.11357167, y: 0.8584069, z: -0.21608967, w: -0.45115894}
+  m_LocalPosition: {x: 21.702911, y: 8.437115, z: 13.072003}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -440,8 +440,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e1fbcf80005c479498b9e926f897d721, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  particleCount: 35000
-  linesCount: 20
+  particleCount: 40000
+  linesCount: 10
   layersCount: 10
   centre: {x: 0, y: -0.5, z: -5.5}
   spawnSize: {x: 10, y: 5}
@@ -451,7 +451,7 @@ MonoBehaviour:
     z: 10
   jitterStrength: 0.035
   showSpawnBounds: 1
-  debug_numParticles: 35000
+  debug_numParticles: 40000
 --- !u!114 &1046021788
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -465,7 +465,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   shader: {fileID: 4800000, guid: cf68dfeec963ee940965f096c79816ea, type: 3}
-  scale: 0.07
+  scale: 0.1
   col: {r: 0.2627451, g: 0.7176471, b: 0.72156864, a: 0}
   colourMap:
     serializedVersion: 2
@@ -497,7 +497,7 @@ MonoBehaviour:
     m_ColorSpace: -1
     m_NumColorKeys: 3
     m_NumAlphaKeys: 2
-  gradientResolution: 50
+  gradientResolution: 5
   velocityDisplayMax: 6
   meshResolution: 3
   debug_MeshTriCount: 2
