@@ -68,6 +68,7 @@
     <Compile Include="Assets\Scripts\Display\SphereGenerator.cs" />
     <Compile Include="Assets\Scripts\Physics\SPH.cs" />
     <Compile Include="Assets\Scripts\Display\SphereGeneratorEightFaces.cs" />
+    <Compile Include="Assets\Scripts\collision\SphereTriangleCollision.cs" />
     <Compile Include="Assets\Scripts\Physics\Kernals.cs" />
   </ItemGroup>
   <ItemGroup>
