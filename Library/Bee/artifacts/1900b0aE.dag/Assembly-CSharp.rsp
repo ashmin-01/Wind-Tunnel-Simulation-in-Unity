@@ -365,6 +365,8 @@
 "Assets/Scripts/Physics/SPH.cs"
 "Assets/Scripts/Simulation3D.cs"
 "Assets/Scripts/Spawner3D.cs"
+"Assets/Scripts/Triangulation/MeshInfo.cs"
+"Assets/Scripts/Triangulation/TriangulateMesh.cs"
 -langversion:9.0
 
 /deterministic
