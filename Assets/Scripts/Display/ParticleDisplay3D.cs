@@ -10,6 +10,8 @@ public class ParticleDisplay3D : MonoBehaviour
     Material mat;
 
     ComputeBuffer argsBuffer;
+    ComputeBuffer pos;
+    ComputeBuffer vel;
     Bounds bounds;
 
     public Gradient colourMap;
@@ -24,6 +26,8 @@ public class ParticleDisplay3D : MonoBehaviour
     public void Init(Simulation3D sim)
     {
         mat = new Material(shader);
+        pos = CreateReducedParticleBuffer(sim.PositionBuffer);
+        vel = CreateReducedParticleBuffer(sim.VelocityBuffer);
         mat.SetBuffer("Positions", sim.PositionBuffer);
         mat.SetBuffer("Velocities", sim.VelocityBuffer);
 
@@ -99,5 +103,31 @@ public class ParticleDisplay3D : MonoBehaviour
     void OnDestroy()
     {
         ComputeHelper.Release(argsBuffer);
+    }
+
+    ComputeBuffer CreateReducedParticleBuffer(ComputeBuffer originalBuffer)
+    {
+        // Retrieve the original particle data from the original buffer
+        int particleCount = originalBuffer.count;
+        Vector3[] originalParticleData = new Vector3[particleCount];
+        originalBuffer.GetData(originalParticleData);
+
+        // Calculate the number of particles for the new buffer (one-fifth of the original)
+        int newParticleCount = Mathf.CeilToInt((float)particleCount / 5);
+
+        // Create an array to hold the reduced particle positions
+        Vector3[] reducedParticleData = new Vector3[newParticleCount];
+
+        // Extract every fifth particle position
+        for (int i = 0; i < newParticleCount; i++)
+        {
+            reducedParticleData[i] = originalParticleData[i * 5];
+        }
+
+        // Create a new compute buffer and set the data
+        ComputeBuffer newBuffer = new ComputeBuffer(newParticleCount, sizeof(float) * 3);
+        newBuffer.SetData(reducedParticleData);
+
+        return newBuffer;
     }
 }

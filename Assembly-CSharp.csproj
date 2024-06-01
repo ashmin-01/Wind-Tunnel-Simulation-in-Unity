@@ -73,6 +73,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Scripts\Physics\FluidSim3D.compute" />
+    <None Include="Assets\Scripts\Physics\FluidSimCollision3D.compute" />
     <None Include="Assets\Scripts\Physics\SpatialHash3D.hlsl" />
     <None Include="Assets\Scripts\Display\Particle3DSurf 1.shader" />
     <None Include="Assets\Scripts\Display\Particle3D.shader" />

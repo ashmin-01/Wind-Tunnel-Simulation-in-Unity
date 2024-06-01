@@ -1,8 +1,24 @@
 using UnityEngine;
 using Unity.Mathematics;
+using System.Runtime.CompilerServices;
+using System.Collections.Generic;
 
 public class Simulation3D : MonoBehaviour
 {
+    //Mayar var for collision
+    float3[] positionspointArray;
+    [SerializeField] private GameObject cube;
+    Mesh cubeMesh;
+    Vector3 positionsOfModel;
+    Vector3 scaleOfModel;
+    private  List<int> storedVertexIndices = new List<int>();
+    private Vector3[] vector3MeshVertices;
+    private float3[] float3MeshVertices;
+    private bool isCollision;
+    public float sphereRadius = 5f;
+    //
+
+
     public event System.Action SimulationStepCompleted;
 
     [Header("Settings")]
@@ -35,6 +51,7 @@ public class Simulation3D : MonoBehaviour
     public ComputeBuffer VelocityBuffer { get; private set; }
     public ComputeBuffer DensityBuffer { get; private set; }
     public ComputeBuffer predictedPositionsBuffer;
+    public ComputeBuffer trianglesBuffer { get; private set; }
     ComputeBuffer spatialIndices;
     ComputeBuffer spatialOffsets;
 
@@ -45,6 +62,7 @@ public class Simulation3D : MonoBehaviour
     const int pressureKernel = 3;
     const int viscosityKernel = 4;
     const int updatePositionsKernel = 5;
+    const int collisionKernel = 6;
 
     GPUSort gpuSort;
 
@@ -52,9 +70,11 @@ public class Simulation3D : MonoBehaviour
     bool isPaused;
     bool pauseNextFrame;
     Spawner3D.SpawnData spawnData;
-
+    int numParticles;
     void Start()
     {
+       
+        
         Debug.Log("Controls: Space = Play/Pause, R = Reset");
         Debug.Log("Use transform tool in scene to scale/rotate simulation bounding box.");
 
@@ -64,7 +84,7 @@ public class Simulation3D : MonoBehaviour
         spawnData = spawner.GetSpawnData();
 
         // Create buffers
-        int numParticles = spawnData.points.Length;
+        numParticles = spawnData.points.Length;
         PositionBuffer = ComputeHelper.CreateStructuredBuffer<float3>(numParticles);
         predictedPositionsBuffer = ComputeHelper.CreateStructuredBuffer<float3>(numParticles);
         VelocityBuffer = ComputeHelper.CreateStructuredBuffer<float3>(numParticles);
@@ -91,6 +111,26 @@ public class Simulation3D : MonoBehaviour
 
         // Init display
         display.Init(this);
+
+        //Mayar var for collision
+        positionspointArray = new float3[numParticles];
+        cubeMesh = cube.GetComponent<MeshFilter>().mesh;
+        positionsOfModel = cube.GetComponent<Transform>().position;
+        scaleOfModel = cube.GetComponent<Transform>().localScale;
+        storedVertexIndices = GetTrianglesVertexIndices(cubeMesh);
+
+        vector3MeshVertices = GetStoredIndicesFromMesh(cubeMesh);
+         float3MeshVertices = ConvertVector3ArrayToFloat3Array(vector3MeshVertices);
+
+
+        trianglesBuffer = ComputeHelper.CreateStructuredBuffer<float3>(float3MeshVertices.Length);
+        trianglesBuffer.SetData(float3MeshVertices);
+        compute.SetBuffer(0, "Triangles", trianglesBuffer);
+        compute.SetFloat("sphereRadius", sphereRadius);
+        compute.SetInt("numTriangles", float3MeshVertices.Length / 3);
+
+
+        //
     }
 
     void FixedUpdate()
@@ -119,6 +159,26 @@ public class Simulation3D : MonoBehaviour
         floorDisplay.transform.localScale = new Vector3(1, 1 / transform.localScale.y * 0.1f, 1);
 
         HandleInput();
+        //mayar var for Collision
+        positionspointArray = GetDataPositionsPoint(PositionBuffer, numParticles);
+        //Debug.Log(positionspointArray[1000]);
+        //Debug.Log(float3MeshVertices[12]);
+        //Debug.Log(float3MeshVertices[13]);
+        //Debug.Log(float3MeshVertices[14]);
+        
+
+            //isCollision = SphereTriangleCollision.IsSphereIntersecting(positionspointArray[0], 5f, float3MeshVertices);
+            //if(isCollision)
+            //{
+            //    Debug.Log("is collision");
+            //}
+            //if(!isCollision)
+            //{
+            //    Debug.Log("is not collsion");
+            //}
+
+        
+       
     }
 
     void RunSimulationFrame(float frameTime)
@@ -145,6 +205,7 @@ public class Simulation3D : MonoBehaviour
         ComputeHelper.Dispatch(compute, PositionBuffer.count, kernelIndex: densityKernel);
         ComputeHelper.Dispatch(compute, PositionBuffer.count, kernelIndex: pressureKernel);
         ComputeHelper.Dispatch(compute, PositionBuffer.count, kernelIndex: viscosityKernel);
+        //ComputeHelper.Dispatch(compute, trianglesBuffer.count, kernelIndex: collisionKernel);
         ComputeHelper.Dispatch(compute, PositionBuffer.count, kernelIndex: updatePositionsKernel);
 
     }
@@ -205,9 +266,72 @@ public class Simulation3D : MonoBehaviour
         }
     }
 
+    private float3[] GetDataPositionsPoint(ComputeBuffer buffer, int count)
+    {
+        // Retrieve the data from the buffer into a float[] array
+        float[] floatArray = new float[count * 3];
+        buffer.GetData(floatArray);
+
+        // Convert the float[] array to a float3[] array
+        float3[] float3Array = new float3[count];
+        for (int i = 0; i < count; i++)
+        {
+            float3Array[i] = new float3(floatArray[i * 3], floatArray[i * 3 + 1], floatArray[i * 3 + 2]);
+        }
+
+        return float3Array;
+    } 
+    private List<int> GetTrianglesVertexIndices(Mesh Mesh)
+    {
+       List<int> storedVertexIndices = new List<int>();
+       
+
+        // Store the vertex indices
+        for (int i = 0; i < Mesh.triangles.Length; i++)
+        {
+            storedVertexIndices.Add(Mesh.triangles[i]);
+        }
+        return storedVertexIndices;
+
+    }
+   private  Vector3[] GetStoredIndicesFromMesh(Mesh mesh )
+    {
+        Vector3[] vertices = mesh.vertices; 
+        Vector3[] verticesSorted =  new Vector3 [storedVertexIndices.Count];
+
+        // Iterate over the stored vertex indices and print the corresponding vertex positions
+        for (int i = 0; i < storedVertexIndices.Count; i ++)
+        {
+            int vertexIndex1 = storedVertexIndices[i];
+            Vector3 vertex1 = vertices[vertexIndex1];
+            vertex1 = vertex1 + positionsOfModel;
+            vertex1.Scale(scaleOfModel);
+            verticesSorted[i] = vertex1;
+            
+
+            
+
+            Debug.Log($"vertex ({vertex1})");
+        }
+        return verticesSorted;
+    }
+    private float3[] ConvertVector3ArrayToFloat3Array(Vector3[] vector3Array)
+    {
+        float3[] float3Array = new float3[vector3Array.Length];
+
+        for (int i = 0; i < vector3Array.Length; i++)
+        {
+            Vector3 vector3 = vector3Array[i];
+            float3Array[i] = new float3(vector3.x, vector3.y, vector3.z);
+        }
+
+        return float3Array;
+    }
+
+
     void OnDestroy()
     {
-        ComputeHelper.Release(PositionBuffer, predictedPositionsBuffer, VelocityBuffer, DensityBuffer, spatialIndices, spatialOffsets);
+        ComputeHelper.Release(PositionBuffer, predictedPositionsBuffer, VelocityBuffer, DensityBuffer, spatialIndices, spatialOffsets , trianglesBuffer);
     }
 
     void OnDrawGizmos()
@@ -220,4 +344,6 @@ public class Simulation3D : MonoBehaviour
         Gizmos.matrix = m;
 
     }
+
+    
 }
