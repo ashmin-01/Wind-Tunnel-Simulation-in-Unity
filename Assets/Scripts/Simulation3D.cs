@@ -3,6 +3,8 @@ using Unity.Mathematics;
 
 public class Simulation3D : MonoBehaviour
 {
+
+    public MeshInfo MeshInfo;
     public event System.Action SimulationStepCompleted;
 
     [Header("Settings")]
