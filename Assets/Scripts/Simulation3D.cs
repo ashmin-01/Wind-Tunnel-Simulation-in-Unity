@@ -11,6 +11,7 @@ public class Simulation3D : MonoBehaviour
     Mesh cubeMesh;
     Vector3 positionsOfModel;
     Vector3 scaleOfModel;
+    Quaternion rotationOfModel;
     private  List<int> storedVertexIndices = new List<int>();
     private Vector3[] vector3MeshVertices;
     private float3[] float3MeshVertices;
@@ -29,7 +30,7 @@ public class Simulation3D : MonoBehaviour
 
     // Wind Power
     public float3 windDirection = new(1, 0, 0);
-    public float windStrength = 0.1f;
+    public float windStrength = 0.01f;
 
     [Range(0, 1)] 
     public float collisionDamping = 0.05f;
@@ -62,8 +63,7 @@ public class Simulation3D : MonoBehaviour
     const int pressureKernel = 3;
     const int viscosityKernel = 4;
     const int updatePositionsKernel = 5;
-    const int collisionKernel = 6;
-
+    
     GPUSort gpuSort;
 
     // State
@@ -117,6 +117,7 @@ public class Simulation3D : MonoBehaviour
         cubeMesh = cube.GetComponent<MeshFilter>().mesh;
         positionsOfModel = cube.GetComponent<Transform>().position;
         scaleOfModel = cube.GetComponent<Transform>().localScale;
+        rotationOfModel = cube.GetComponent<Transform>().localRotation;
         storedVertexIndices = GetTrianglesVertexIndices(cubeMesh);
 
         vector3MeshVertices = GetStoredIndicesFromMesh(cubeMesh);
@@ -125,7 +126,7 @@ public class Simulation3D : MonoBehaviour
 
         trianglesBuffer = ComputeHelper.CreateStructuredBuffer<float3>(float3MeshVertices.Length);
         trianglesBuffer.SetData(float3MeshVertices);
-        compute.SetBuffer(0, "Triangles", trianglesBuffer);
+        ComputeHelper.SetBuffer(compute, trianglesBuffer, "Triangles", externalForcesKernel, updatePositionsKernel);
         compute.SetFloat("sphereRadius", sphereRadius);
         compute.SetInt("numTriangles", float3MeshVertices.Length / 3);
 
@@ -205,8 +206,8 @@ public class Simulation3D : MonoBehaviour
         ComputeHelper.Dispatch(compute, PositionBuffer.count, kernelIndex: densityKernel);
         ComputeHelper.Dispatch(compute, PositionBuffer.count, kernelIndex: pressureKernel);
         ComputeHelper.Dispatch(compute, PositionBuffer.count, kernelIndex: viscosityKernel);
-        //ComputeHelper.Dispatch(compute, trianglesBuffer.count, kernelIndex: collisionKernel);
         ComputeHelper.Dispatch(compute, PositionBuffer.count, kernelIndex: updatePositionsKernel);
+
 
     }
 
@@ -304,14 +305,18 @@ public class Simulation3D : MonoBehaviour
         {
             int vertexIndex1 = storedVertexIndices[i];
             Vector3 vertex1 = vertices[vertexIndex1];
-            vertex1 = vertex1 + positionsOfModel;
+            Debug.Log($"the Vertex {i} is {vertex1} before");
             vertex1.Scale(scaleOfModel);
+            vertex1 = rotationOfModel * vertex1;
+            vertex1 = vertex1 + positionsOfModel;
             verticesSorted[i] = vertex1;
-            
+            Debug.Log($"the Vertex {i} is {vertex1} after");
 
-            
 
-            Debug.Log($"vertex ({vertex1})");
+
+
+
+
         }
         return verticesSorted;
     }
