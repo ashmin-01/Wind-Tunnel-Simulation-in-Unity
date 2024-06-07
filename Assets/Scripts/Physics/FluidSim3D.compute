@@ -107,6 +107,18 @@ void ResolveCollisions(uint particleIndex)
     const float3 halfSize = 0.5f;
     const float3 edgeDst = halfSize - abs(posLocal);
 
+    // Get the sphere center for the current particle
+    float3 sphereCenter = Positions[particleIndex];
+    // Check for intersections with triangles
+    bool intersects = IsSphereIntersecting(sphereCenter, sphereRadius, numTriangles, Triangles);
+
+    // Reflect velocity and apply damping if intersection detected
+    if (intersects)
+    {
+        velocityLocal = reflect(velocityLocal, normalize(sphereCenter)); // Reflect the velocity
+        velocityLocal *= collisionDamping; // Apply collision damping
+    }
+
     // Resolve collisions on the x and y axes (bounce back)
     if (edgeDst.x <= 0)
     {
@@ -133,6 +145,7 @@ void ResolveCollisions(uint particleIndex)
     Positions[particleIndex] = mul(localToWorld, float4(posLocal, 1)).xyz;
     Velocities[particleIndex] = mul(localToWorld, float4(velocityLocal, 0)).xyz;
 }
+
 
 [numthreads(NumThreads, 1, 1)]
 void ExternalForces(uint3 id : SV_DispatchThreadID)
@@ -325,19 +338,6 @@ void CalculateViscosity(uint3 id : SV_DispatchThreadID)
 void UpdatePositions(uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= numParticles) return;
-
-    // Get the sphere center for the current particle
-    float3 sphereCenter = Positions[id.x];
-    
-
-    // Check for intersections with triangles
-    bool intersects = IsSphereIntersecting(sphereCenter, sphereRadius, numTriangles, Triangles);
-
-    // Modify velocity if intersection is detected
-    if (intersects)
-    {
-        Positions[id.x] += Velocities[id.x] * deltaTime * -1; // Example modification: reverse velocity on intersection
-    }
 
     Positions[id.x] += Velocities[id.x] * deltaTime;
     ResolveCollisions(id.x);
