@@ -50,17 +50,39 @@ const uint numTriangles;
 const float sphereRadius;
 
 // Mayar
+float distanceToSegmentSquared(float3 point1, float3 v, float3 w)
+{
+    float3 vw = w - v;
+    float3 vp = point1
+    -v;
+    float t = dot(vp, vw) / dot(vw, vw);
+    t = clamp(t, 0.0, 1.0);
+    float3 projection = v + t * vw;
+    return dot(point1
+    -projection, point1
+    -projection);
+}
+
 bool IsSphereIntersectingTriangle(float3 sphereCenter, float radius, float3 A, float3 B, float3 C)
 {
+    // Edge vectors
     float3 AB = B - A;
     float3 AC = C - A;
+
+    // Normal of the triangle plane
     float3 N = normalize(cross(AB, AC));
-    float distance = abs(dot(N, sphereCenter - A));
-    if (distance > radius)
+
+    // Distance from sphere center to the triangle plane
+    float distance = dot(N, sphereCenter - A);
+    if (abs(distance) > radius)
     {
         return false;
     }
+
+    // Project sphere center onto the triangle plane
     float3 P = sphereCenter - distance * N;
+
+    // Barycentric coordinate check
     float3 v0 = C - A;
     float3 v1 = B - A;
     float3 v2 = P - A;
@@ -72,7 +94,34 @@ bool IsSphereIntersectingTriangle(float3 sphereCenter, float radius, float3 A, f
     float invDenom = 1.0 / (dot00 * dot11 - dot01 * dot01);
     float u = (dot11 * dot02 - dot01 * dot12) * invDenom;
     float v = (dot00 * dot12 - dot01 * dot02) * invDenom;
-    return (u >= 0) && (v >= 0) && (u + v < 1);
+
+    // If point is in triangle
+    if ((u >= 0) && (v >= 0) && (u + v <= 1))
+    {
+        return true;
+    }
+
+    // Check distance from sphere center to the triangle edges
+    float radius2 = radius * radius;
+
+    // Check each edge
+    if (distanceToSegmentSquared(sphereCenter, A, B) <= radius2)
+        return true;
+    if (distanceToSegmentSquared(sphereCenter, B, C) <= radius2)
+        return true;
+    if (distanceToSegmentSquared(sphereCenter, C, A) <= radius2)
+        return true;
+
+    // Check distance from sphere center to each vertex
+    if (dot(sphereCenter - A, sphereCenter - A) <= radius2)
+        return true;
+    if (dot(sphereCenter - B, sphereCenter - B) <= radius2)
+        return true;
+    if (dot(sphereCenter - C, sphereCenter - C) <= radius2)
+        return true;
+
+    // If none of the checks returned true, the sphere is not intersecting the triangle
+    return false;
 }
 
 bool IsSphereIntersecting(float3 sphereCenter, float radius, uint numTriangles, StructuredBuffer<float3> triangles)
@@ -86,6 +135,16 @@ bool IsSphereIntersecting(float3 sphereCenter, float radius, uint numTriangles, 
     }
     return false;
 }
+
+// for regenerate 
+
+float hash(float n)
+{
+    return frac(sin(n) * 43758.5453123);
+}
+
+
+
 
 float PressureFromDensity(float density)
 {
@@ -115,35 +174,88 @@ void ResolveCollisions(uint particleIndex)
     // Reflect velocity and apply damping if intersection detected
     if (intersects)
     {
-        velocityLocal = reflect(velocityLocal, normalize(sphereCenter)); // Reflect the velocity
+       
+        float3 normal = normalize(sphereCenter);
+        float3 reflectedVelocity = reflect(velocityLocal, normal);
+        float3 parallelVelocity = velocityLocal - dot(velocityLocal, normal);
+        
+        float blendFactor = 0.5f;
+        velocityLocal = lerp(reflectedVelocity, parallelVelocity, blendFactor);
+       // velocityLocal = reflectedVelocity;
         velocityLocal *= collisionDamping; // Apply collision damping
+        Positions[particleIndex] = mul(localToWorld, float4(posLocal, 1)).xyz;
+        Velocities[particleIndex] = mul(localToWorld, float4(velocityLocal, 0)).xyz;
+        
     }
-
-    // Resolve collisions on the x and y axes (bounce back)
-    if (edgeDst.x <= 0)
-    {
-        posLocal.x = halfSize.x * sign(posLocal.x);
-        velocityLocal.x *= -1 * collisionDamping;
+    
+    
+        // Resolve collisions on the x and y axes (bounce back)
+        if (edgeDst.x <= 0)
+        {
+            posLocal.x = halfSize.x * sign(posLocal.x);
+            velocityLocal.x *= -1 * collisionDamping;
+         // Transform resolved position/velocity back to world space
+        Positions[particleIndex] = mul(localToWorld, float4(posLocal, 1)).xyz;
+        Velocities[particleIndex] = mul(localToWorld, float4(velocityLocal, 0)).xyz;
     }
-    if (edgeDst.y <= 0)
-    {
-        posLocal.y = halfSize.y * sign(posLocal.y);
-        velocityLocal.y *= -1 * collisionDamping;
+        if (edgeDst.y <= 0)
+        {
+            posLocal.y = halfSize.y * sign(posLocal.y);
+            velocityLocal.y *= -1 * collisionDamping;
+         // Transform resolved position/velocity back to world space
+        Positions[particleIndex] = mul(localToWorld, float4(posLocal, 1)).xyz;
+        Velocities[particleIndex] = mul(localToWorld, float4(velocityLocal, 0)).xyz;
     }
 
     // Wrapping behavior on the z axis
-    if (posLocal.z > halfSize.z)
-    {
-        posLocal.z = -halfSize.z;
-    }
-    else if (posLocal.z < -halfSize.z)
-    {
-        posLocal.z = halfSize.z;
-    }
+        if (posLocal.z > halfSize.z)
+        {
+            posLocal.z = -halfSize.z;
+        // Generate a random seed based on the particle index
+        float seed = particleIndex * 12.9898 + 78.233;
 
-    // Transform resolved position/velocity back to world space
-    Positions[particleIndex] = mul(localToWorld, float4(posLocal, 1)).xyz;
-    Velocities[particleIndex] = mul(localToWorld, float4(velocityLocal, 0)).xyz;
+// Generate random numbers for each component
+        float randX = hash(seed);
+        float randY = hash(seed + 1.0);
+        float randZ = hash(seed + 2.0);
+
+// Scale and offset to the desired ranges
+        float randomX = lerp(-2.0, 2.0, randX);
+        float randomY = lerp(-2.5, -1.0, floor(randY * 10.0) * 0.4);
+        float randomZ = lerp(-19.0, -17.0, randZ);
+
+        Positions[particleIndex] = float3(randomX, randomY, randomZ);
+        Velocities[particleIndex] = float3(0, 0, 10);
+        return;
+            
+        
+        }
+        else if (posLocal.z < -halfSize.z)
+        {
+            posLocal.z = halfSize.z;
+        // Generate a random seed based on the particle index
+        float seed = particleIndex * 12.9898 + 78.233;
+
+// Generate random numbers for each component
+        float randX = hash(seed);
+        float randY = hash(seed + 1.0);
+        float randZ = hash(seed + 2.0);
+
+// Scale and offset to the desired ranges
+        float randomX = lerp(-3.0, 2.0, randX);
+        float randomY = lerp(-6.0, -1.0, floor(randY * 10.0) * 0.4);
+        float randomZ = lerp(-19.0, -17.0, randZ);
+
+        Positions[particleIndex] = float3(randomX, randomY, randomZ);
+        Velocities[particleIndex] = float3(0 ,0 , 10);
+        return;
+        
+    }
+    
+    
+
+
+   
 }
 
 
@@ -156,7 +268,7 @@ void ExternalForces(uint3 id : SV_DispatchThreadID)
     Velocities[id.x] += float3(0, gravity, 0) * deltaTime;
 
     // External forces (wind)
-    Velocities[id.x] += windDirection * windStrength * deltaTime;
+    Velocities[0] += windDirection * windStrength *  deltaTime;
 
     // Predict
     PredictedPositions[id.x] = Positions[id.x] + Velocities[id.x] * 1 / 120.0;

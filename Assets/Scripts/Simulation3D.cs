@@ -2,10 +2,13 @@ using UnityEngine;
 using Unity.Mathematics;
 using System.Runtime.CompilerServices;
 using System.Collections.Generic;
+using System.Linq;
 
 public class Simulation3D : MonoBehaviour
 {
-    //Mayar var for collision
+    //mayar model
+
+    private List<Vector3> modelVertices = new List<Vector3>();
     float3[] positionspointArray;
     [SerializeField] private GameObject cube;
     Mesh cubeMesh;
@@ -125,12 +128,19 @@ public class Simulation3D : MonoBehaviour
 
 
         trianglesBuffer = ComputeHelper.CreateStructuredBuffer<float3>(float3MeshVertices.Length);
+          
         trianglesBuffer.SetData(float3MeshVertices);
         ComputeHelper.SetBuffer(compute, trianglesBuffer, "Triangles", externalForcesKernel, updatePositionsKernel);
         compute.SetFloat("sphereRadius", sphereRadius);
-        compute.SetInt("numTriangles", float3MeshVertices.Length / 3);
-
-
+        compute.SetInt("numTriangles", float3MeshVertices.Length );
+        //Debug.Log("befoooor");
+        positionspointArray = GetDataPositionsPoint(PositionBuffer, numParticles);
+        modelVertices = ThreeDSReader.ReadVertices("C:\\Users\\mayar\\Desktop\\wagen1_3ds\\wagen1_Lp_End.3ds");
+        //foreach (Vector3 vertex in modelVertices)
+        //{
+        //    Debug.Log(vertex);
+        //}
+       // Debug.Log("afterr");
         //
     }
 
@@ -161,7 +171,7 @@ public class Simulation3D : MonoBehaviour
 
         HandleInput();
         //mayar var for Collision
-        positionspointArray = GetDataPositionsPoint(PositionBuffer, numParticles);
+        //positionspointArray = GetDataPositionsPoint(PositionBuffer, numParticles);
         //Debug.Log(positionspointArray[1000]);
         //Debug.Log(float3MeshVertices[12]);
         //Debug.Log(float3MeshVertices[13]);
@@ -278,6 +288,7 @@ public class Simulation3D : MonoBehaviour
         for (int i = 0; i < count; i++)
         {
             float3Array[i] = new float3(floatArray[i * 3], floatArray[i * 3 + 1], floatArray[i * 3 + 2]);
+            //Debug.Log(float3Array[i]);
         }
 
         return float3Array;
@@ -305,12 +316,12 @@ public class Simulation3D : MonoBehaviour
         {
             int vertexIndex1 = storedVertexIndices[i];
             Vector3 vertex1 = vertices[vertexIndex1];
-            Debug.Log($"the Vertex {i} is {vertex1} before");
+          //  Debug.Log($"the Vertex {i} is {vertex1} before");
             vertex1.Scale(scaleOfModel);
             vertex1 = rotationOfModel * vertex1;
             vertex1 = vertex1 + positionsOfModel;
             verticesSorted[i] = vertex1;
-            Debug.Log($"the Vertex {i} is {vertex1} after");
+           // Debug.Log($"the Vertex {i} is {vertex1} after");
 
 
 
