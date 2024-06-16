@@ -62,10 +62,10 @@
   <ItemGroup>
     <Compile Include="Assets\Scripts\Compute Helpers\ComputeHelper.cs" />
     <Compile Include="Assets\Scripts\Display\ParticleDisplay3D.cs" />
+    <Compile Include="Assets\Scripts\ThreeDSReader.cs" />
     <Compile Include="Assets\collisionTest.cs" />
     <Compile Include="Assets\Scripts\Simulation3D.cs" />
     <Compile Include="Assets\Scripts\Compute Helpers\GPU sort\GPUSort.cs" />
-    <Compile Include="Assets\model\ThreeDSReader.cs" />
     <Compile Include="Assets\Scripts\Display\collision\SphereTriangleCollision.cs" />
     <Compile Include="Assets\Scripts\Spawner3D.cs" />
     <Compile Include="Assets\Scripts\Display\SphereGenerator.cs" />

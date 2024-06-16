@@ -135,13 +135,12 @@ public class Simulation3D : MonoBehaviour
         compute.SetInt("numTriangles", float3MeshVertices.Length );
         //Debug.Log("befoooor");
         positionspointArray = GetDataPositionsPoint(PositionBuffer, numParticles);
-        modelVertices = ThreeDSReader.ReadVertices("C:\\Users\\mayar\\Desktop\\wagen1_3ds\\wagen1_Lp_End.3ds");
-        //foreach (Vector3 vertex in modelVertices)
-        //{
-        //    Debug.Log(vertex);
-        //}
-       // Debug.Log("afterr");
-        //
+        modelVertices = ThreeDSReader.ReadVertices("C:\\Users\\mayar\\Documents\\GitHub\\Wind-Tunnel-Simulation-in-Unity\\Assets\\models\\SUV_Car\\Models\\1.3DS");
+       foreach (Vector3 vertex in modelVertices)
+        {
+            Debug.Log(vertex);
+        }
+        
     }
 
     void FixedUpdate()

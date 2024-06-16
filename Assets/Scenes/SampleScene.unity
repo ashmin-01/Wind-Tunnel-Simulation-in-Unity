@@ -514,7 +514,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cube: {fileID: 2034874016}
-  sphereRadius: 0.7
+  sphereRadius: 1
   timeScale: 1
   fixedTimeStep: 1
   iterationsPerFrame: 1

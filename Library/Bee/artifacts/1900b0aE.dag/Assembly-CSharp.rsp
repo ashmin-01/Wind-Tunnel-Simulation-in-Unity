@@ -356,7 +356,6 @@
 -analyzer:"C:/Program Files/Unity/Hub/Editor/2022.3.20f1/Editor/Data/Tools/Unity.SourceGenerators/Unity.Properties.SourceGenerator.dll"
 -analyzer:"C:/Program Files/Unity/Hub/Editor/2022.3.20f1/Editor/Data/Tools/Unity.SourceGenerators/Unity.SourceGenerators.dll"
 "Assets/collisionTest.cs"
-"Assets/model/ThreeDSReader.cs"
 "Assets/Scripts/Compute Helpers/ComputeHelper.cs"
 "Assets/Scripts/Compute Helpers/GPU sort/GPUSort.cs"
 "Assets/Scripts/Display/collision/SphereTriangleCollision.cs"
@@ -367,6 +366,7 @@
 "Assets/Scripts/Physics/SPH.cs"
 "Assets/Scripts/Simulation3D.cs"
 "Assets/Scripts/Spawner3D.cs"
+"Assets/Scripts/ThreeDSReader.cs"
 -langversion:9.0
 
 /deterministic
