@@ -1,4 +1,4 @@
-#pragma kernel ExternalForces
+﻿#pragma kernel ExternalForces
 #pragma kernel UpdateSpatialHash
 #pragma kernel CalculateDensities
 #pragma kernel CalculatePressureForce
@@ -19,6 +19,7 @@ RWStructuredBuffer<float2> Densities; // Density, Near Density
 RWStructuredBuffer<uint3> SpatialIndices; // used for spatial hashing
 RWStructuredBuffer<uint> SpatialOffsets; // used for spatial hashing
 StructuredBuffer<float3> Triangles;
+RWStructuredBuffer<int> ParticlesShow ;
 
 // Settings
 const uint numParticles;
@@ -172,21 +173,54 @@ void ResolveCollisions(uint particleIndex)
     bool intersects = IsSphereIntersecting(sphereCenter, sphereRadius, numTriangles, Triangles);
 
     // Reflect velocity and apply damping if intersection detected
+   // Resolve aerodynamic collision
     if (intersects)
     {
-       
-        float3 normal = normalize(sphereCenter);
-        float3 reflectedVelocity = reflect(velocityLocal, normal);
-        float3 parallelVelocity = velocityLocal - dot(velocityLocal, normal);
-        
-        float blendFactor = 0.5f;
-        velocityLocal = lerp(reflectedVelocity, parallelVelocity, blendFactor);
-       // velocityLocal = reflectedVelocity;
-        velocityLocal *= collisionDamping; // Apply collision damping
+        float3 normal = normalize(sphereCenter); // Get the normal of the collision surface
+  
+          // Relative velocity   اشرحيلنا line by line 
+        float3 relativeVelocity = velocityLocal;
+  
+          // Compute tangential and normal components of the velocity
+        float3 tangentialVelocity = relativeVelocity - dot(relativeVelocity, normal) * normal;
+        float3 normalVelocity = dot(relativeVelocity, normal) * normal;
+  
+          // Calculate lift and drag forces
+        float3 lift = cross(relativeVelocity, normal) * 0.05f; // Adjust the lift coefficient as needed
+        float3 drag = -normalVelocity * 0.1f; // Adjust the drag coefficient as needed
+  
+          // Update the velocity
+        velocityLocal += lift + drag;
+          
+          // Optionally, update the position slightly to avoid sticking to the surface
+        posLocal += normal * 0.03f; // Small offset to move it away from the surface
+        ParticlesShow[particleIndex] = 1;
         Positions[particleIndex] = mul(localToWorld, float4(posLocal, 1)).xyz;
         Velocities[particleIndex] = mul(localToWorld, float4(velocityLocal, 0)).xyz;
-        
     }
+    //else
+    //{
+    //    ParticlesShow[particleIndex] = 0;
+    //    Positions[particleIndex] = mul(localToWorld, float4(posLocal, 1)).xyz;
+    //    Velocities[particleIndex] = mul(localToWorld, float4(velocityLocal, 0)).xyz;
+    //}
+    //if (intersects)
+    //{
+       
+    //    float3 normal = normalize(sphereCenter);
+    //    float3 reflectedVelocity = reflect(velocityLocal, normal /2);
+    //    float3 parallelVelocity = velocityLocal - dot(velocityLocal, normal);
+        
+    //    float blendFactor = 0.5f;
+    //    //velocityLocal = lerp(reflectedVelocity, parallelVelocity, blendFactor);
+    //    velocityLocal = reflectedVelocity;
+    //    velocityLocal *= collisionDamping; // Apply collision damping
+    //    ParticlesShow[particleIndex] = 1;
+    //    Positions[particleIndex] = mul(localToWorld, float4(posLocal, 1)).xyz;
+    //    Velocities[particleIndex] = mul(localToWorld, float4(velocityLocal, 0)).xyz;
+        
+    //}
+    
     
     
         // Resolve collisions on the x and y axes (bounce back)

@@ -1,8 +1,11 @@
+using System.Data;
 using UnityEngine;
 
 public class ParticleDisplay3D : MonoBehaviour
 {
-
+    // private float timer =0;
+    // private float timer =0;
+    private bool showParticles = false;
     public Shader shader;
     public float scale;
     Mesh mesh;
@@ -10,8 +13,7 @@ public class ParticleDisplay3D : MonoBehaviour
     Material mat;
 
     ComputeBuffer argsBuffer;
-    ComputeBuffer pos;
-    ComputeBuffer vel;
+    
     Bounds bounds;
 
     public Gradient colourMap;
@@ -26,14 +28,14 @@ public class ParticleDisplay3D : MonoBehaviour
     public void Init(Simulation3D sim)
     {
         mat = new Material(shader);
-        pos = CreateReducedParticleBuffer(sim.PositionBuffer);
-        vel = CreateReducedParticleBuffer(sim.VelocityBuffer);
+        
         mat.SetBuffer("Positions", sim.PositionBuffer);
         mat.SetBuffer("Velocities", sim.VelocityBuffer);
+        mat.SetBuffer("ParticlesShow", sim.particlesShow);
 
         mesh = SphereGeneratorEightFaces.GenerateSphereMesh(meshResolution);
         debug_MeshTriCount = mesh.triangles.Length / 3;
-        argsBuffer = ComputeHelper.CreateArgsBuffer(mesh, sim.PositionBuffer.count);
+        argsBuffer = ComputeHelper.CreateArgsBuffer(mesh, sim.PositionBuffer.count );
         bounds = new Bounds(Vector3.zero, Vector3.one * 10000);
     }
 
@@ -41,7 +43,19 @@ public class ParticleDisplay3D : MonoBehaviour
     {
 
         UpdateSettings();
+
+
+        if (Input.GetKeyDown(KeyCode.J))
+        {
+            showParticles = !showParticles;
+        }
+        if (showParticles)
+        {
         Graphics.DrawMeshInstancedIndirect(mesh, 0, mat, bounds, argsBuffer);
+
+        }
+
+
     }
 
     void UpdateSettings()

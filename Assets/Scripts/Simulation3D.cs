@@ -3,14 +3,28 @@ using Unity.Mathematics;
 using System.Runtime.CompilerServices;
 using System.Collections.Generic;
 using System.Linq;
+using System;
 
 public class Simulation3D : MonoBehaviour
 {
+    //show Path mayar
+
+    public bool showParticles = false;
+
+    public Color lineColor = Color.green;  // Color of the lines
+    public int maxPositions = 50;  // Maximum number of positions to store
+    
+
+    private List<Queue<float3>> positionQueues;  // List of queues to store the positions of each particle
+    private List<LineRenderer> lineRenderers;  // List of line renderers for each particle
+    //
+
+
     //mayar model
 
     private List<Vector3> modelVertices = new List<Vector3>();
     float3[] positionspointArray;
-    [SerializeField] private GameObject cube;
+    [SerializeField] private GameObject model;
     Mesh cubeMesh;
     Vector3 positionsOfModel;
     Vector3 scaleOfModel;
@@ -20,6 +34,7 @@ public class Simulation3D : MonoBehaviour
     private float3[] float3MeshVertices;
     private bool isCollision;
     public float sphereRadius = 5f;
+    private int[] particlesShowArray;
     //
 
 
@@ -52,6 +67,7 @@ public class Simulation3D : MonoBehaviour
 
     // Buffers
     public ComputeBuffer PositionBuffer { get; private set; }
+    public ComputeBuffer particlesShow { get; private set; }
     public ComputeBuffer VelocityBuffer { get; private set; }
     public ComputeBuffer DensityBuffer { get; private set; }
     public ComputeBuffer predictedPositionsBuffer;
@@ -76,7 +92,6 @@ public class Simulation3D : MonoBehaviour
     int numParticles;
     void Start()
     {
-       
         
         Debug.Log("Controls: Space = Play/Pause, R = Reset");
         Debug.Log("Use transform tool in scene to scale/rotate simulation bounding box.");
@@ -94,6 +109,7 @@ public class Simulation3D : MonoBehaviour
         DensityBuffer = ComputeHelper.CreateStructuredBuffer<float2>(numParticles);
         spatialIndices = ComputeHelper.CreateStructuredBuffer<uint3>(numParticles);
         spatialOffsets = ComputeHelper.CreateStructuredBuffer<uint>(numParticles);
+        particlesShow = ComputeHelper.CreateStructuredBuffer<int>(numParticles);
 
         // Set buffer data
         SetInitialBufferData(spawnData);
@@ -117,13 +133,19 @@ public class Simulation3D : MonoBehaviour
 
         //Mayar var for collision
         positionspointArray = new float3[numParticles];
-        cubeMesh = cube.GetComponent<MeshFilter>().mesh;
-        positionsOfModel = cube.GetComponent<Transform>().position;
-        scaleOfModel = cube.GetComponent<Transform>().localScale;
-        rotationOfModel = cube.GetComponent<Transform>().localRotation;
+        cubeMesh = model.GetComponent<MeshFilter>().mesh;
+        positionsOfModel = model.GetComponent<Transform>().position;
+        scaleOfModel = model.GetComponent<Transform>().localScale;
+        rotationOfModel = model.GetComponent<Transform>().localRotation;
         storedVertexIndices = GetTrianglesVertexIndices(cubeMesh);
-
+        //here 
+        //comment this rima 
         vector3MeshVertices = GetStoredIndicesFromMesh(cubeMesh);
+
+        //uncomment this rima
+
+        //DelaunayTriangulationExample example = new DelaunayTriangulationExample();
+        //vector3MeshVertices = example.GetVerticesAfterTriangulate(model);
          float3MeshVertices = ConvertVector3ArrayToFloat3Array(vector3MeshVertices);
 
 
@@ -133,6 +155,11 @@ public class Simulation3D : MonoBehaviour
         ComputeHelper.SetBuffer(compute, trianglesBuffer, "Triangles", externalForcesKernel, updatePositionsKernel);
         compute.SetFloat("sphereRadius", sphereRadius);
         compute.SetInt("numTriangles", float3MeshVertices.Length );
+        particlesShowArray =new int[numParticles];
+        Array.Fill(particlesShowArray , 1);
+        particlesShow.SetData(particlesShowArray);
+        ComputeHelper.SetBuffer(compute, particlesShow, "ParticlesShow", externalForcesKernel , updatePositionsKernel);
+
         //Debug.Log("befoooor");
         positionspointArray = GetDataPositionsPoint(PositionBuffer, numParticles);
         modelVertices = ThreeDSReader.ReadVertices("C:\\Users\\mayar\\Documents\\GitHub\\Wind-Tunnel-Simulation-in-Unity\\Assets\\models\\SUV_Car\\Models\\1.3DS");
@@ -140,7 +167,29 @@ public class Simulation3D : MonoBehaviour
         {
             Debug.Log(vertex);
         }
-        
+        // drow path 
+        // Initialize the lists
+        positionQueues = new List<Queue<float3>>();
+        lineRenderers = new List<LineRenderer>();
+
+        // Initialize the queues and line renderers for each particle
+        for (int i = 0; i < positionspointArray.Length / 20; i++)
+        {
+            positionQueues.Add(new Queue<float3>());
+
+            LineRenderer lineRenderer = new GameObject("LineRenderer_" + i).AddComponent<LineRenderer>();
+            lineRenderer.transform.parent = this.transform;
+            lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
+            lineRenderer.startColor = lineColor;
+            lineRenderer.endColor = lineColor;
+            lineRenderer.startWidth = 0.1f;
+            lineRenderer.endWidth = 0.1f;
+            lineRenderer.positionCount = 0;
+
+            lineRenderers.Add(lineRenderer);
+        }
+        //
+
     }
 
     void FixedUpdate()
@@ -170,25 +219,29 @@ public class Simulation3D : MonoBehaviour
 
         HandleInput();
         //mayar var for Collision
-        //positionspointArray = GetDataPositionsPoint(PositionBuffer, numParticles);
+        positionspointArray = GetDataPositionsPoint(PositionBuffer, numParticles);
+        for (int i = 0; i < positionspointArray.Length / 20; i++)
+        {
+            UpdateLineRenderer(i, positionspointArray[i]);
+        }
         //Debug.Log(positionspointArray[1000]);
         //Debug.Log(float3MeshVertices[12]);
         //Debug.Log(float3MeshVertices[13]);
         //Debug.Log(float3MeshVertices[14]);
-        
 
-            //isCollision = SphereTriangleCollision.IsSphereIntersecting(positionspointArray[0], 5f, float3MeshVertices);
-            //if(isCollision)
-            //{
-            //    Debug.Log("is collision");
-            //}
-            //if(!isCollision)
-            //{
-            //    Debug.Log("is not collsion");
-            //}
 
-        
-       
+        //isCollision = SphereTriangleCollision.IsSphereIntersecting(positionspointArray[0], 5f, float3MeshVertices);
+        //if(isCollision)
+        //{
+        //    Debug.Log("is collision");
+        //}
+        //if(!isCollision)
+        //{
+        //    Debug.Log("is not collsion");
+        //}
+
+
+
     }
 
     void RunSimulationFrame(float frameTime)
@@ -274,6 +327,7 @@ public class Simulation3D : MonoBehaviour
             isPaused = true;
             SetInitialBufferData(spawnData);
         }
+        
     }
 
     private float3[] GetDataPositionsPoint(ComputeBuffer buffer, int count)
@@ -360,5 +414,33 @@ public class Simulation3D : MonoBehaviour
 
     }
 
-    
+    void UpdateLineRenderer(int index, float3 currentPosition)
+    {
+        // Get the queue for the current particle
+        Queue<float3> positionsQueue = positionQueues[index];
+
+        // Add the new position to the queue if it has moved significantly
+        if (positionsQueue.Count == 0 || math.distance(currentPosition, positionsQueue.Peek()) > 0.1f)
+        {
+            positionsQueue.Enqueue(currentPosition);
+
+            // If the queue exceeds the maximum number of positions, remove the oldest
+            if (positionsQueue.Count > maxPositions)
+            {
+                positionsQueue.Dequeue();
+            }
+
+            // Update the LineRenderer
+            LineRenderer lineRenderer = lineRenderers[index];
+            lineRenderer.positionCount = positionsQueue.Count;
+            Vector3[] positionsArray = new Vector3[positionsQueue.Count];
+            int i = 0;
+            foreach (var pos in positionsQueue)
+            {
+                positionsArray[i++] = new Vector3(pos.x, pos.y, pos.z);
+            }
+            lineRenderer.SetPositions(positionsArray);
+        }
+    }
+
 }
